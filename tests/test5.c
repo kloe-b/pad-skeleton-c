@@ -94,8 +94,10 @@ void test_frame() {
     assert(tos() == 0x5);
     step();
     assert(tos() == 0x2);
-    assert(get_local_variable(0) == 0x4);
     assert(get_local_variable(1) == 0x3);
+    assert(get_local_variable(0) == 0x4);
+    
+   
     destroy_ijvm();
 }
 

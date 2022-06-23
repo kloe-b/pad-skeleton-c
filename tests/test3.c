@@ -151,6 +151,7 @@ void test_ificmpeq1()
     // L4
     for (int i = 0; i < 3; i++) {
         steps(3);
+        int tester = get_program_counter();
         assert(oldpc == get_program_counter());
         oldpc = get_program_counter();
     }

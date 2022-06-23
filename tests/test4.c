@@ -95,7 +95,6 @@ void test_iteration_load()
 
     output_file = tmpfile();
     set_output(output_file);
-
     run();
 
     rewind(output_file);

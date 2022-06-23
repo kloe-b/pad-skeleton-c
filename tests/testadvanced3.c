@@ -63,7 +63,7 @@ void test_wide2()
 
 int main()
 {
-    RUN_TEST(test_wide1);
-    RUN_TEST(test_wide2);
+     RUN_TEST(test_wide1);
+     RUN_TEST(test_wide2);
     return END_TEST();
 }

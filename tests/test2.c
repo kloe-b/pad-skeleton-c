@@ -24,6 +24,7 @@ void test_signed_bipush()
 
 void test_simple_iadd()
 {
+    
     int res = init_ijvm("files/task2/TestIadd1.ijvm");
     assert(res != -1);
 
