@@ -54,7 +54,7 @@ unsigned short nrVars;
 int c;
 int oldpc;
 int oldsp;
-int16_t wideArg;
+unsigned short wideArg;
 int count=0;
 bool wide;
 
@@ -140,6 +140,7 @@ struct node* get_node(int key) {
    return current;
 }
 word_t get_local_variable(int i){
+ 
   return get_node(i)->data;
 }
 word_t pop()
@@ -371,6 +372,9 @@ void ireturn(){
     struct frame *ftemp =deleteFrame();
     // printf("(%d,%d) ",ftemp->key,ftemp->oldpc);
     pc=ftemp->oldpc;
+    x=tos();
+    s.sp=oldsp;
+    push(x);
 
 }
 void invokevirtual(){
@@ -378,10 +382,11 @@ void invokevirtual(){
     count=count+1;
     methodIndex=text[pc+1];
     printf("METHODINDEX %x",methodIndex);
+    oldsp=s.sp;
     oldpc=pc+2;
     insertFrame(count,oldpc);
 
-    oldsp=s.sp;
+    
     result=get_constant(methodIndex);
     pc=result;
 
@@ -443,19 +448,31 @@ bool step()
 
   case OP_ILOAD:
     printf("ILOAD \n");
-    push(get_local_variable(text[pc]));
+    if(wide){
+      // cArg=swap_uint32(cArg);
+      wideArg=(int16_t)((text[pc]<<8)|text[pc+1]);
+      push(get_local_variable(wideArg));
+       pc=pc+2;
+    }
+    else{
+      push(get_local_variable(text[pc]));
      pc++;
+    }
+    
     break;
 
   case OP_ISTORE:
     printf("ISTORE \n");
     if(wide){
       // cArg=swap_uint32(cArg);
-      wideArg=((uint16_t)text[pc]<<8)|text[pc+1];
+      wideArg=(int16_t)((text[pc]<<8)|text[pc+1]);
+
       istore(wideArg);
-      // pc=pc+2;
+       pc=pc+1;
     }
+    else{
     istore(text[pc]);
+    }
     break;
 
   case OP_LDC_W:
@@ -477,6 +494,8 @@ bool step()
   case OP_WIDE:
     printf("WIDE\n");
     wide=true;
+    step();
+    wide=false;
     break;
 
   case OP_IADD:
