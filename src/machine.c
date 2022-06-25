@@ -3,7 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
+#include <stdio.h>
+// #include "structs.h"
+// #include "linkedLists.c"
+//  #include "globalVars.c"
 typedef struct stack
 {
   word_t *stack;
@@ -19,10 +22,13 @@ typedef struct node {
 typedef struct frame {
    int key;
    int oldpc;
+   int oldsp;
+   int loadingCount;
    struct frame *nextF;
 }frame_t;
 
 int8_t x, y;
+int loadingCount;
 byte_t *text;
 byte_t *temp;
 word_t mn;
@@ -57,6 +63,7 @@ int oldsp;
 unsigned short wideArg;
 int count=0;
 bool wide;
+bool invalid;
 
 void printList() {
    struct node *ptr = head;
@@ -158,7 +165,9 @@ word_t tos(){
 }
 void push(word_t n)
 {
-  assert(s.sp < stack_size() - 1);
+  printf("sp: %x\n",s.sp);
+  printf("sz: %x\n",stack_size());
+  assert(s.sp < stack_size() );
   s.stack[++s.sp] =n;
   printf("pushed: %x\n",n);
 }
@@ -217,6 +226,7 @@ int init_ijvm(char *binary_file)
   }
   s.stack = malloc(ts * sizeof(word_t));
   insertFrame(count,pc);
+  
   return 0;
 }
 
@@ -259,6 +269,7 @@ int text_size(void)
 {
   return ts;
 }
+
 void add (){
     x = tos();
     pop();
@@ -340,10 +351,12 @@ void and(){
 void outF(){
   x = tos();
   if(out!=NULL){
-    fwrite(&x,1,sizeof(byte_t),out);
+    fputc(x,out);
+    // fwrite(&x,1,sizeof(byte_t),out);
   }
   else{
-    fwrite(&x,1,sizeof(byte_t),stdout);
+    fputc(x,stdout);
+    // fwrite(&x,1,sizeof(byte_t),stdout);
   }
   pop();
  
@@ -363,6 +376,7 @@ void istore(int i){
     pc++;
 }
 void ireturn(){
+  
    for(int i=nrArg-1;i>0;i--){ 
                
         struct node *temp = deleteFirst();
@@ -370,12 +384,14 @@ void ireturn(){
         printf("(%d,%d) ",temp->key,temp->data);
     } 
     struct frame *ftemp =deleteFrame();
+    for(int i=0;i<loadingCount+1;i++){
+      pop();
+    }
     // printf("(%d,%d) ",ftemp->key,ftemp->oldpc);
     pc=ftemp->oldpc;
-    x=tos();
-    s.sp=oldsp;
-    push(x);
-
+    // s.sp=ftemp->oldsp;
+     printf("%d is sp\n",s.sp);
+    
 }
 void invokevirtual(){
 
@@ -383,10 +399,12 @@ void invokevirtual(){
     methodIndex=text[pc+1];
     printf("METHODINDEX %x",methodIndex);
     oldsp=s.sp;
+    printf("%d is OLDSP\n",oldsp);
     oldpc=pc+2;
     insertFrame(count,oldpc);
-
-    
+    get_frame(count)->oldsp=oldsp;
+    get_frame(count)->loadingCount=loadingCount;
+    loadingCount=0;
     result=get_constant(methodIndex);
     pc=result;
 
@@ -416,13 +434,17 @@ byte_t get_instruction(void){
 bool step()
 {
   opCode = text[pc];
-   pc++;
+  pc++;
   
   switch (opCode)
   {
   case OP_IRETURN:
     printf("IRETURN\n");
+    x=tos();
     ireturn();
+      push(x);
+      
+     printf("%d is sp\n",s.sp);
     break;
 
   case OP_INVOKEVIRTUAL:
@@ -448,6 +470,7 @@ bool step()
 
   case OP_ILOAD:
     printf("ILOAD \n");
+    loadingCount++;
     if(wide){
       // cArg=swap_uint32(cArg);
       wideArg=(int16_t)((text[pc]<<8)|text[pc+1]);
@@ -566,13 +589,15 @@ bool step()
     }
     break;
   default:
+    invalid=true;
     break;
   }
-  // printf("----------STACK AFTER STEP: \n");
-  // for(int i=0;i<stack_size();i++){
-  //   printf("%x ,",s.stack[i]);
-  // }
-  // printf("\n----------\n");
+  printf("----------STACK AFTER STEP: \n");
+  for(int i=0;i<stack_size();i++){
+    printf("%x ,",s.stack[i]);
+  }
+  printf("\n----------\n");
+  invalid=false;
   return true;
 }
 void run()
@@ -592,4 +617,18 @@ void set_input(FILE *fp)
 void set_output(FILE *fp)
 {
   out=fp;
+}
+
+bool finished(void){
+
+  if(pc==ts){
+    return true;
+  }
+  else if(opCode==OP_HALT||opCode==OP_ERR){
+    return true;
+  }
+  else if(invalid){
+    return true;
+  }
+  return false;
 }
