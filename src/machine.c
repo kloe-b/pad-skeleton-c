@@ -155,7 +155,7 @@ word_t pop()
 {
   // sizeOfStack--;
   assert(s.sp >= 0);
-  // printf("POPPED :%X\n",s.stack[s.sp--]);
+  printf("POPPED :%X\n",s.stack[s.sp]);
   // s.sp++;
   // printf("TOS AFTER POP :%X\n",tos());
   return s.stack[s.sp--];
@@ -172,7 +172,7 @@ void push(word_t n)
   // printf("sz: %x\n",stack_size());
   assert(s.sp < stack_size() );
   s.stack[++s.sp] =n;
-  // printf("pushed: %x\n",n);
+  printf("pushed: %x\n",n);
 }
 int stack_size()
 {
@@ -196,6 +196,7 @@ int init_ijvm(char *binary_file)
   in=stdin;
   out=stdout;
   pc=0;
+  // loadingCount=0;
   wide=false;
   if (f == NULL)
   {
@@ -390,11 +391,12 @@ void ireturn(){
         // printf("(%d,%d) ",temp->key,temp->data);
     } 
     struct frame *ftemp =deleteFrame();
-    for(int i=0;i<loadingCount+1;i++){
+    for(int i=0;i<ftemp->loadingCount+2;i++){
       pop();
     }
     // printf("(%d,%d) ",ftemp->key,ftemp->oldpc);
     pc=ftemp->oldpc;
+    loadingCount=ftemp->loadingCount;
     // s.sp=ftemp->oldsp;
     //  printf("%d is sp\n",s.sp);
     
@@ -409,8 +411,8 @@ void invokevirtual(){
     oldpc=pc+2;
     insertFrame(count,oldpc);
     get_frame(count)->oldsp=oldsp;
-    get_frame(count)->loadingCount=loadingCount;
-    loadingCount=0;
+    get_frame(count)->loadingCount=0;
+    
     result=get_constant(methodIndex);
     pc=result;
 
@@ -445,7 +447,7 @@ bool step()
   switch (opCode)
   {
   case OP_IRETURN:
-    // printf("IRETURN\n");
+    printf("IRETURN\n");
     x=tos();
     ireturn();
       push(x);
@@ -454,28 +456,28 @@ bool step()
     break;
 
   case OP_INVOKEVIRTUAL:
-    // printf("INVOKEVIRTUAL\n");
+    printf("INVOKEVIRTUAL\n");
     invokevirtual();
     // printf("nr args %d nr vars %d\n",nrArg,nrVars);
     break;
 
   case OP_POP:
-    // printf("POP\n");
+    printf("POP\n");
     pop();
     break;
 
   case OP_IINC:
-    // printf("IINC\n");
+    printf("IINC\n");
     iinc();
     break;
 
   case OP_SWAP:
-    // printf("SWAP\n");
+    printf("SWAP\n");
     swap();
     break;
 
   case OP_ILOAD:
-    // printf("ILOAD \n");
+    printf("ILOAD \n");
     loadingCount++;
     if(wide){
       // cArg=swap_uint32(cArg);
@@ -491,7 +493,7 @@ bool step()
     break;
 
   case OP_ISTORE:
-    // printf("ISTORE \n");
+    printf("ISTORE \n");
     if(wide){
       // cArg=swap_uint32(cArg);
       wideArg=(int16_t)((text[pc]<<8)|text[pc+1]);
@@ -505,45 +507,45 @@ bool step()
     break;
 
   case OP_LDC_W:
-    // printf("LDC_W \n");
+    printf("LDC_W \n");
     ldc();
     break;
 
   case OP_NOP:
-    // printf("NOP \n");
+    printf("NOP \n");
     break;
   
   case OP_BIPUSH:
 
-    // printf("BIPUSH \n");
+    printf("BIPUSH \n");
     push(((int8_t)text[pc]));
      pc++;
     break;
 
   case OP_WIDE:
-    // printf("WIDE\n");
+    printf("WIDE\n");
     wide=true;
     step();
     wide=false;
     break;
 
   case OP_IADD:
-    // printf("IADD \n");
+    printf("IADD \n");
     add();
     break;
 
   case OP_IFLT:
-    // printf("IFLT \n");
+    printf("IFLT \n");
     iflt();
     break;
 
   case OP_GOTO:
-    // printf("GOTO \n");
+    printf("GOTO \n");
     goTo();
     break;
 
   case OP_DUP:
-    // printf("DUP\n");
+    printf("DUP\n");
     x = tos();
     push(((int8_t)x));
     break;
@@ -554,44 +556,44 @@ bool step()
     return false;
 
   case OP_HALT:
-    // printf("HALT\n");
+    printf("HALT\n");
     return false;
 
   case OP_IOR:
-    // printf("OR\n");
+    printf("OR\n");
     iOr();
     break;
 
   case OP_ISUB:
-    // printf("SUB\n");
+    printf("SUB\n");
     sub();
     break;
 
   case OP_IAND:
-    // printf("AND\n");
+    printf("AND\n");
     and();
     break;
 
   case OP_IFEQ:
-    // printf("IFEQ\n");
+    printf("IFEQ\n");
     ifeq();
     break;
   case OP_ICMPEQ:
-    // printf("ICMEQ\n");
+    printf("ICMEQ\n");
     icmpeq();
     break;
   case OP_OUT:
-    // printf("OUT\n");
+    printf("OUT\n");
     outF();
     break;
   case OP_IN:
-    // printf("IN\n");
+    printf("IN\n");
     c=getc(in);
     if(c==EOF){
       push(0);
     }
     else{
-    push((int8_t)c);
+      push((int8_t)c);
     }
     break;
   default:
