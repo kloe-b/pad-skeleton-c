@@ -48,6 +48,7 @@ void test_get_stack_contents()
     step();
     steps(2*100);
     int size = stack_size();
+    printf("%d",size);
     assert(size >= 100);
     word_t *stack = get_stack();
     int markers = 0;
